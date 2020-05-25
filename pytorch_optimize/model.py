@@ -18,11 +18,10 @@ class Model:
     """
     A wrapper over pytorch model to sample layer wise parameters and to update gradients
     """
-    def __init__(self, net: nn.Module, optimizer: nn.optim.Optimizer, strategy=SamplingStrategy.RANDOM):
+    def __init__(self, net: nn.Module, strategy=SamplingStrategy.RANDOM):
 
         self.net = net
         self.sampling_strategy = strategy
-        self.optimizer = optimizer
 
         # collect layer wise parameters
         self.layer_wise_parameters = self._get_layer_params(net)
@@ -220,32 +219,3 @@ class Model:
             last += param_size
 
             self._set_param_value(param+value, param_type, param_value)
-
-    def step_layer(self, layer_name: str, gradients: torch.Tensor):
-        """
-        Updates the layer by taking a gradient step using the provided gradients for the specified layer
-
-        Arguments:
-            layer_name {str} -- name of the layer
-            gradients {torch.Tensor} -- a flattented gradient vector for the layer
-        """
-        self._set_layer_value_by_name(layer_name, gradients, ".grad")
-        self.optimizer.step()
-
-
-if __name__ == "__main__":
-    class SampleNet(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.layer_1 = torch.nn.Linear(10, 5)
-            self.layer_2 = torch.nn.Linear(5, 10)
-
-        def forward(self, input):
-            output = self.layer_1(input)
-            output = self.layer_2(output)
-            return output
-
-    net = SampleNet()
-    model = Model(net, 1.0)
-    name, value = model.sample()
-    model.set_layer_value(name, value)
