@@ -4,9 +4,8 @@ import torch
 from functools import reduce
 from typing import List, Tuple, Callable, Dict
 from pytorch_optimize.model import Model
-from pytorch_optimize.objective import Objective
+from pytorch_optimize.objective import Objective, Inputs
 from pytorch_optimize.scaler import RankScaler
-from pytorch_optimize.batch import Batch
 from pytorch_optimize.evaluator import ModelEvaluator
 from torch.optim import Optimizer
 
@@ -76,7 +75,7 @@ class ESOptimizer:
         perturbs += mirrored
         return perturbs
 
-    def gradient_step(self, batch: Batch) -> torch.Tensor:
+    def gradient_step(self, inputs: Inputs) -> torch.Tensor:
 
         # sample some parameters here
         parameter_name, parameter_value = self.model.sample()

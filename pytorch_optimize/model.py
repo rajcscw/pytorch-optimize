@@ -65,7 +65,7 @@ class Model:
         parts = name.split(".")
         for attr in parts[:-1]:
             obj = getattr(obj, attr)
-        type = self._str_to_type(str=type)
+        type = self._str_to_type(str_type=type)
         setattr(obj, parts[-1], value.type(type))
 
     def _get_layer_params(self, net: nn.Module) -> Dict[str, Dict[str, Tuple]]:
@@ -177,7 +177,7 @@ class Model:
                 value = torch.cat((value, param_value.reshape((-1, 1))))
         return value
 
-    def set_layer_value(self, layer_name: str, layer_value: torch.Tensor, value_type: str = ".grad"):
+    def set_layer_value(self, layer_name: str, layer_value: torch.Tensor, value_type: str = ".data"):
         """
         Sets layer value
 
@@ -210,7 +210,13 @@ class Model:
             param_value = layer_value[last:last+param_size].reshape(param_shape)
             last += param_size
 
-            self._set_param_value(param+value, param_type, param_value)
+            self._set_param_value(param+value_type, param_type, param_value)
 
     def set_gradients(self, layer_name: str, gradients: torch.Tensor):
         self._set_layer_value_by_name(layer_name, gradients, ".grad")
+
+    def forward(self, *args):
+        """
+        Just forwards the request to underlying model
+        """
+        return self.net.forward(*args)

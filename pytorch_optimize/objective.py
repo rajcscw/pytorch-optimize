@@ -1,7 +1,15 @@
 from abc import abstractmethod
 from pytorch_optimize.model import Model
-from pytorch_optimize.batch import Batch
 from typing import List
+from dataclasses import dataclass
+
+
+@dataclass(init=True)
+class Inputs:
+    """
+    A dataclass to hold input data for evaluation of objectives
+    """
+    pass
 
 
 class Objective:
@@ -9,5 +17,5 @@ class Objective:
     Abstract class for implementing objectives or loss functions
     """
     @abstractmethod
-    def __call__(self, model: Model, batch: Batch) -> List[float]:
+    def __call__(self, model: Model, inputs: Inputs) -> List[float]:
         raise NotImplementedError
