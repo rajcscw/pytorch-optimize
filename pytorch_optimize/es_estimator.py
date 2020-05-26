@@ -3,53 +3,26 @@ from torch.multiprocessing import Pool
 import torch
 from functools import reduce
 from typing import List, Tuple, Callable, Dict
-from sprl_package.core_components.models import PyTorchModel
+from pytorch_optimize.model import Model
+from pytorch_optimize.objective import Objective
+from pytorch_optimize.scaler import RankScaler
+from pytorch_optimize.batch import Batch
+from pytorch_optimize.evaluator import ModelEvaluator
+from torch.optim import Optimizer
 
 
-class ESEstimator:
+class ESOptimizer:
     """
     An optimizer class that implements Evolution Strategies (ES)
     """
-    def __init__(self, sigma: float, samples: int, loss_function: Callable,
-                 model: PyTorchModel, device_list: List[str],
-                 obj_weights: torch.Tensor, use_parallel_gpu=True,
-                 parallel_workers=4):
+    def __init__(self, model: Model, sgd_optimizer: Optimizer, sigma: float, objective_fn: Objective,
+                 obj_weights: torch.Tensor, n_samples: int, n_workers=4):
         self.sigma = sigma
-        self.samples = samples
-        self.loss_function = loss_function
+        self.n_samples = n_samples
+        self.objective_fn = objective_fn
         self.model = model
-        self.weights = weights
-        self.p = Pool(processes=parallel_workers)
-
-    def _compute_ranks(self, x: List[float]):
-        """
-        Returns ranks in [0, len(x))
-        Note: This is different from scipy.stats.rankdata, which returns ranks in [1, len(x)].
-        """
-        assert x.ndim == 1
-        ranks = np.empty(len(x), dtype=int)
-        ranks[x.argsort()] = np.arange(len(x))
-        return ranks
-
-    def _compute_centered_ranks(self, x: List[float]):
-        """
-        Computes centered ranks
-        """
-        y = self._compute_ranks(x.ravel()).reshape(x.shape).astype(np.float32)
-        y /= (x.size - 1)
-        y -= .5
-        return y
-
-    def _fit_rank_scaler(self, values: List[float]) -> Dict[float, float]:
-        """Fits and returns a rank scaler (a dict mapping)
-        """
-        ranked_values = self._compute_centered_ranks(values)
-
-        # now, create a mapping of value as key and its rank transformed
-        scaler_mapping = {}
-        for value, ranked in zip(values, ranked_values):
-            scaler_mapping[value] = ranked
-        return scaler_mapping
+        self.obj_weights = obj_weights
+        self.pool = Pool(processes=n_workers)
 
     def _compute_gradient(self, obj_value: List[float], delta: float):
         """
@@ -60,7 +33,7 @@ class ESEstimator:
         grad = delta * weighted_sum
         return grad
 
-    def _fit_scalers_for_objectives(self, objectives: List[List[float]]) -> List[Dict[float, float]]:
+    def _fit_scalers_for_objectives(self, objectives: List[List[float]]) -> List[RankScaler]:
         """
         Fits rank scalers for each objectives
         """
@@ -69,7 +42,7 @@ class ESEstimator:
         n_values = len(objectives)
         for obj_ix in range(n_objectives):
             values = [objectives[obj_ix][i] for i in range(n_values)]
-            scaler = self._fit_rank_scaler(np.array(all_reward_scores))
+            scaler = RankScaler(values)
             rank_scalers.append(scaler)
         return rank_scalers
 
@@ -85,48 +58,44 @@ class ESEstimator:
             obj, delta = obj
 
             # rank scale them
-            obj = [rank_scalers[ix] for ix, value in obj]
+            obj = [rank_scalers[ix].transform(value) for ix, value in obj]
 
             # compute gradient
-            gradient = self._compute_weighted_total_objective(obj, delta)
+            gradient = self._compute_gradient(obj, delta)
             total_gradients += gradient
 
         # average the gradients
-        grad = total_gradients / (self.k * self.sigma)
+        grad = total_gradients / (self.n_samples * self.sigma)
 
         return grad
 
-    def _run_parellely(self, current_estimate, current_parameter):
-
+    def _generate_perturbations(self, current_value):
         # create mirrored sampled perturbations
-        perturbs = [torch.randn_like(current_estimate) for i in range(int(self.k/2))]
+        perturbs = [torch.randn_like(current_estimate) for i in range(int(self.n_samples/2))]
         mirrored = [-i for i in perturbs]
         perturbs += mirrored
+        return perturbs
 
-        # seeds for grid envs (also mirrored)
-        seeds = list(range(int(self.k/2)))
-        seeds += seeds
+    def gradient_step(self, batch: Batch) -> torch.Tensor:
 
-        # run parallely for all k mirrored candidates
-        self.runner.sigma = self.sigma
-        self.runner.current_estimate = current_estimate
-        self.runner.current_parameter = current_parameter
-        self.runner.device = self.device_list[0]
-        obj_values = self.p.starmap(self.runner.run_for_perturb, zip(perturbs, seeds))
-        behaviors = [item[1] for item in obj_values]
-        gradient = self._gradients_from_objectives(current_estimate, obj_values)
-        return gradient, behaviors
+        # sample some parameters here
+        parameter_name, parameter_value = self.model.sample()
 
-    def estimate_gradient(self, current_parameter: str, current_value: torch.Tensor,
-                          **kwargs) -> torch.Tensor:
-        """[summary]
+        # generate unit gaussian perturbations
+        unit_perturbations = self._generate_perturbations(current_value)
 
-        Arguments:
-            current_parameter {str} -- [description]
-            current_value {torch.Tensor} -- [description]
+        # apply user selected deviation
+        perturbations = [perturb * self.sigma for perturb in unit_perturbations]
 
-        Returns:
-            torch.Tensor -- [description]
-        """
-        g_t = self._run_parellely(current_estimate, current_parameter)
-        return g_t
+        # run the evaluator
+        evaluator = ModelEvaluator(self.model, self.objective_fn, parameter_name)
+
+        # get the objective values
+        obj_values = self.p.map(evaluator, perturbations)
+
+        # compute gradients
+        gradients = self._gradients_from_objectives(current_estimate, obj_values)
+
+        # update the model paramters and take a gradient step
+        self.model.set_gradients(parameter_name, gradients)
+        self.optimizer.step()

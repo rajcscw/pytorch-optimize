@@ -4,7 +4,7 @@ from pytorch_optimize.batch import Batch
 from typing import List
 
 
-class AbstractObjective:
+class Objective:
     """
     Abstract class for implementing objectives or loss functions
     """

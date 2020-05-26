@@ -44,14 +44,6 @@ class Model:
         elif str_type == "torch.float64":
             return torch.float64
 
-    def forward(self, input: torch.Tensor):
-        """
-        Forwards the request to underlying net
-        """
-        with torch.no_grad():
-            output = self.net.forward(input)
-            return output
-
     def _get_param_value_type(self, name: str) -> Tuple[torch.Tensor, torch.dtype]:
         """
         Gets value and type of a parameter
@@ -185,7 +177,7 @@ class Model:
                 value = torch.cat((value, param_value.reshape((-1, 1))))
         return value
 
-    def set_layer_value(self, layer_name: str, layer_value: torch.Tensor):
+    def set_layer_value(self, layer_name: str, layer_value: torch.Tensor, value_type: str = ".grad"):
         """
         Sets layer value
 
@@ -199,12 +191,12 @@ class Model:
             for layer_name, layer_dim in self.layer_dimensions.items():
                 value = layer_value[last:last+layer_dim]
                 last += layer_dim
-                self._set_layer_value_by_name(layer_name, value)
+                self._set_layer_value_by_name(layer_name, value, value_type)
         else:
             # just call the underlying method
-            self._set_layer_value_by_name(layer_name, layer_value)
+            self._set_layer_value_by_name(layer_name, layer_value, value_type)
 
-    def _set_layer_value_by_name(self, layer_name: str, layer_value: torch.Tensor, value=".data"):
+    def _set_layer_value_by_name(self, layer_name: str, layer_value: torch.Tensor, value_type: str):
         """
         Sets the value of individual parameters in the layer by properly unpacking and setting them one at a time
         """
@@ -219,3 +211,6 @@ class Model:
             last += param_size
 
             self._set_param_value(param+value, param_type, param_value)
+
+    def set_gradients(self, layer_name: str, gradients: torch.Tensor):
+        self._set_layer_value_by_name(layer_name, gradients, ".grad")
