@@ -36,14 +36,6 @@ class Model:
         else:
             self.last = len(self.layer_wise_parameters)
 
-    @staticmethod
-    # TBD: may have to take care of cuda tensors
-    def _str_to_type(str_type: str):
-        if str_type == "torch.float32":
-            return torch.float32
-        elif str_type == "torch.float64":
-            return torch.float64
-
     def _get_param_value_type(self, name: str) -> Tuple[torch.Tensor, torch.dtype]:
         """
         Gets value and type of a parameter
@@ -65,7 +57,6 @@ class Model:
         parts = name.split(".")
         for attr in parts[:-1]:
             obj = getattr(obj, attr)
-        type = self._str_to_type(str_type=type)
         setattr(obj, parts[-1], value.type(type))
 
     def _get_layer_params(self, net: nn.Module) -> Dict[str, Dict[str, Tuple]]:
@@ -83,7 +74,6 @@ class Model:
 
             # get parameter details
             data, type = self._get_param_value_type(param[0])
-            type = str(type)
             shape = data.shape
 
             # store it in the layer information
@@ -118,7 +108,7 @@ class Model:
         elif self.sampling_strategy == SamplingStrategy.TOP_DOWN:
             return self._sample_top_down()
         else:  # default is all layers at once
-            return self._get_layer_value("all")
+            return "all", self._get_layer_value("all")
 
     def _sample_bottom_up(self) -> Tuple[str, torch.Tensor]:
         """
