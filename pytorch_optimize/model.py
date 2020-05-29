@@ -209,4 +209,5 @@ class Model:
         """
         Just forwards the request to underlying model
         """
-        return self.net.forward(*args)
+        with torch.no_grad():
+            return self.net.forward(*args)

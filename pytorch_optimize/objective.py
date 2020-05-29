@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 
 @dataclass(init=True)
-class Inputs:
+class Samples:
     """
     A dataclass to hold input data for evaluation of objectives
     """
@@ -17,5 +17,5 @@ class Objective:
     Abstract class for implementing objectives or loss functions
     """
     @abstractmethod
-    def __call__(self, model: Model, inputs: Inputs) -> List[float]:
+    def __call__(self, model: Model, inputs: Samples) -> List[float]:
         raise NotImplementedError

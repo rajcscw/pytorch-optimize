@@ -5,13 +5,13 @@ import numpy as np
 class RankScaler:
     def __init__(self, values: List[float]):
         self.values = values
-        self.mapping = self._map_to_ranks(values)
+        self._mapping = self._map_to_ranks(values)
 
     def transform(self, value: float) -> float:
         """
         Returns its rank transformed value
         """
-        return self.mapping[value]
+        return self._mapping[value]
 
     @staticmethod
     def _map_to_ranks(values: List[float]):

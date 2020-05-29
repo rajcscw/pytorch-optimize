@@ -6,5 +6,4 @@ setup(name="pytorch_optimize",
       author="Rajkumar Ramamurthy",
       author_email="raj1514@gmail.com",
       packages=find_packages(),
-      install_requires=["numpy", "torch", "seaborn", "scikit-image",
-                        "sklearn", "tqdm", "pycodestyle", "pytest"])
+      install_requires=["numpy", "torch", "torchvision", "tqdm", "pycodestyle", "pytest"])
