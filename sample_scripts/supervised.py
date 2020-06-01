@@ -14,6 +14,7 @@ from torch.optim import SGD, Adam, Adadelta
 from dataclasses import dataclass
 from typing import List
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 
 @dataclass(init=True)
@@ -51,19 +52,28 @@ class Accuracy(Objective):
         return [accuracy]
 
 
-class CELoss(Objective):
-    def __call__(self, model: Model, samples: Samples, device: str) -> List[float]:
-        deivce = torch.device(device)
-        outputs = model.forward(samples.inputs.to(device))
-        loss = torch.nn.CrossEntropyLoss()(outputs, samples.targets.to(device))
-        return [1/loss]
+def evaluate_on_dataset(model: Model, dataloader: DataLoader):
+    all_predicted = []
+    all_targets = []
+    for inputs, targets in dataloader:
+        samples = BatchSamples(inputs=inputs, targets=targets)
+        outputs = model.forward(samples.inputs)
+        predicted_labels = torch.argmax(outputs, dim=1).cpu()
+        all_predicted.extend(predicted_labels.tolist())
+        all_targets.extend(targets.tolist())
+
+    accuracy = accuracy_score(all_targets, all_predicted)
+    return accuracy
 
 
 if __name__ == "__main__":
     # dataloder
-    transform = transforms.Compose([transforms.ToTensor()])
-    trainset = torchvision.datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
-    testset = torchvision.datasets.FashionMNIST(root='./data', download=True, transform=transform)
+    transform = transforms.Compose([
+           transforms.ToTensor(),
+           transforms.Normalize((0.1307,), (0.3081,))
+       ])
+    trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    testset = torchvision.datasets.MNIST(root='./data', download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, 50, shuffle=True, num_workers=1)
     trainloader = torch.utils.data.DataLoader(testset, 50, num_workers=1)
 
@@ -72,26 +82,17 @@ if __name__ == "__main__":
     wrapped_model = Model(classifier, strategy=SamplingStrategy.ALL)
 
     # objective function (loss function)
-    obj_measure = CELoss()
+    obj_measure = Accuracy()
 
     # optimizer
-    es_optimizer = ESOptimizer(model=wrapped_model, sgd_optimizer=Adam(classifier.parameters()),
-                               objective_fn=obj_measure, obj_weights=[1.0], sigma=1e-1, n_samples=50,
+    es_optimizer = ESOptimizer(model=wrapped_model, sgd_optimizer=Adadelta(classifier.parameters()),
+                               objective_fn=obj_measure, obj_weights=[1.0], sigma=1e-2, n_samples=20,
                                devices=["cpu"], n_workers=10)
 
     for epoch in range(5):
-        n_batches = 0
-        running_accuracy = 0
-        show_every = 50
+        show_every = 200
         for i, (inputs, targets) in enumerate(tqdm(trainloader)):
             samples = BatchSamples(inputs=inputs, targets=targets)
             es_optimizer.gradient_step(samples)
-
-            accuracy = Accuracy()(wrapped_model, samples, "cpu")
-            n_batches += 1
-            running_accuracy += accuracy[0]
-
             if (i+1) % show_every == 0:
-                print(f"Iter {i}, Running accuracy: {running_accuracy/n_batches}")
-                n_batches = 0
-                running_accuracy = 0
+                print(f"Accuracy on train set: {evaluate_on_dataset(wrapped_model, trainloader)}")
