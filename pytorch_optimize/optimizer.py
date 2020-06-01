@@ -80,7 +80,7 @@ class ESOptimizer:
         perturbs += mirrored
         return perturbs
 
-    def gradient_step(self, samples: Samples) -> List[float] -> torch.Tensor:
+    def gradient_step(self, samples: Samples) -> torch.Tensor:
 
         # sample some parameters here
         parameter_name, parameter_value = self.model.sample()

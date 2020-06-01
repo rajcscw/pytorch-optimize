@@ -86,10 +86,10 @@ if __name__ == "__main__":
 
     # optimizer
     es_optimizer = ESOptimizer(model=wrapped_model, sgd_optimizer=Adadelta(classifier.parameters()),
-                               objective_fn=obj_measure, obj_weights=[1.0], sigma=1e-2, n_samples=20,
+                               objective_fn=obj_measure, obj_weights=[1.0], sigma=1e-2, n_samples=100,
                                devices=["cpu"], n_workers=10)
 
-    for epoch in range(5):
+    for epoch in range(1):
         show_every = 200
         for i, (inputs, targets) in enumerate(tqdm(trainloader)):
             samples = BatchSamples(inputs=inputs, targets=targets)
