@@ -16,8 +16,10 @@ class ModelEvaluator:
         self.current_parameter_name = current_parameter_name
         self.samples = samples
 
-    def __call__(self, layer_weights: torch.Tensor):
+    def __call__(self, layer_weights: torch.Tensor, device: str):
+        device = torch.device(device)
         model = deepcopy(self.model)
+        model.to_device(device)
         model.set_layer_value(self.current_parameter_name, layer_weights)
-        objective_values = self.objective_function(model, self.samples)
+        objective_values = self.objective_function(model, self.samples, device)
         return objective_values

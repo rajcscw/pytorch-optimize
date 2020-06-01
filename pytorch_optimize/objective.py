@@ -17,5 +17,5 @@ class Objective:
     Abstract class for implementing objectives or loss functions
     """
     @abstractmethod
-    def __call__(self, model: Model, inputs: Samples) -> List[float]:
+    def __call__(self, model: Model, inputs: Samples, device: str) -> List[float]:
         raise NotImplementedError

@@ -203,7 +203,7 @@ class Model:
             self._set_param_value(param+value_type, param_type, param_value)
 
     def set_gradients(self, layer_name: str, gradients: torch.Tensor):
-        self._set_layer_value_by_name(layer_name, gradients, ".grad")
+        self.set_layer_value(layer_name, gradients, ".grad")
 
     def forward(self, *args):
         """
@@ -211,3 +211,6 @@ class Model:
         """
         with torch.no_grad():
             return self.net.forward(*args)
+
+    def to_device(self, device: str):
+        self.net = self.net.to(torch.device(device))

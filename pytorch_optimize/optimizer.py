@@ -8,6 +8,7 @@ from pytorch_optimize.objective import Objective, Samples
 from pytorch_optimize.scaler import RankScaler
 from pytorch_optimize.evaluator import ModelEvaluator
 from torch.optim import Optimizer
+import random
 
 
 class ESOptimizer:
@@ -15,7 +16,7 @@ class ESOptimizer:
     An optimizer class that implements Evolution Strategies (ES)
     """
     def __init__(self, model: Model, sgd_optimizer: Optimizer, objective_fn: Objective,
-                 obj_weights: List[float], sigma: float, n_samples: int, n_workers=4):
+                 obj_weights: List[float], sigma: float, n_samples: int, devices: List, n_workers=4):
         self.model = model
         self._optimizer = sgd_optimizer
         self.sigma = sigma
@@ -23,7 +24,11 @@ class ESOptimizer:
         self.objective_fn = objective_fn
         self.obj_weights = torch.Tensor(obj_weights)
         self.n_objectives = len(obj_weights)
+        self.devices = devices
         self.pool = Pool(processes=n_workers)
+
+        # evaluator
+        self.evaluator = ModelEvaluator(self.model, self.objective_fn, None, None)
 
     def _compute_gradient(self, obj_value: List[float], delta: float):
         """
@@ -84,21 +89,19 @@ class ESOptimizer:
         unit_perturbations = self._generate_perturbations(parameter_value)
 
         # apply user selected deviation
-        perturbations = [perturb * self.sigma for perturb in unit_perturbations]
+        perturbations = [parameter_value + perturb * self.sigma for perturb in unit_perturbations]
 
-        # run the evaluator
-        evaluator = ModelEvaluator(self.model, self.objective_fn, parameter_name, samples)
+        # sample devices
+        devices = random.choices(self.devices, k=len(unit_perturbations))
 
         # get the objective values
-        obj_values = self.pool.map(evaluator, perturbations)
+        self.evaluator.current_parameter_name = parameter_name
+        self.evaluator.samples = samples
+        obj_values = self.pool.starmap(self.evaluator, zip(perturbations, devices))
 
         # compute gradients
         gradients = self._gradients_from_objectives(parameter_value, obj_values, unit_perturbations)
 
         # update the model paramters and take a gradient step
-        self.model.set_gradients(parameter_name, gradients)
+        self.model.set_gradients(parameter_name, -gradients)
         self._optimizer.step()
-
-        # we do an evaluation again on the given inputs and return the obj value
-        updated_parameter_value = self.model._get_layer_value(parameter_name)
-        return evaluator(updated_parameter_value)
