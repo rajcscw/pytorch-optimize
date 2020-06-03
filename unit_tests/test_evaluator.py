@@ -1,6 +1,6 @@
 from pytorch_optimize.evaluator import ModelEvaluator
 from pytorch_optimize.model import Model
-from pytorch_optimize.objective import Objective, Inputs
+from pytorch_optimize.objective import Objective, Samples
 from torch.nn import Module, Linear
 import torch
 import pytest
@@ -17,24 +17,24 @@ class TestModule(Module):
 
 
 class TestObjective(Objective):
-    def __call__(self, model: Model, inputs: Inputs):
-        output = model.forward(inputs.x)
+    def __call__(self, model: Model, samples: Samples, device: str):
+        output = model.forward(samples.x)
         obj_value = [output.sum().item()]
         return obj_value
 
 
 @dataclass(init=True)
-class TestInputs(Inputs):
+class TestSamples(Samples):
     x: torch.Tensor
 
 
 def test_model_evaluator():
-    inputs = TestInputs(x=torch.ones(1, 3) * 5)
+    samples = TestSamples(x=torch.ones(1, 3) * 5)
     model = Model(TestModule())
     objective = TestObjective()
     layer_name, _ = model.sample()
     layer_value = torch.ones(1, 3)
-    evaluator = ModelEvaluator(model, objective, layer_name, inputs)
-    obj_value = evaluator(layer_value)
+    evaluator = ModelEvaluator(model, objective, layer_name, samples)
+    obj_value = evaluator(layer_value, "cpu")
     assert len(obj_value) == 1
     assert obj_value[0] == 15.0

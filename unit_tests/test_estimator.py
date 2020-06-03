@@ -11,7 +11,7 @@ import pytest
 class TestModule(Module):
     def __init__(self):
         super().__init__()
-        self.layer_1 = torch.nn.Linear(1, 1, bias=False)
+        self.layer_1 = torch.nn.Linear(1, 1)
 
     def forward(self, input: torch.Tensor):
         return self.layer_1(input)
@@ -33,13 +33,13 @@ class TestSamples(Samples):
     y: torch.Tensor
 
 
-def test_gradient():
+def test_estimator_step():
     samples = TestSamples(x=torch.ones(1, 1), y=torch.ones(1, 1) * 2)
     regressor = TestModule()
     model = Model(regressor)
     objective = TestObjective()
     optimizer = SGD(regressor.parameters(), 1e-2)
     estimator = ESOptimizer(model, optimizer, objective,
-                            [1.0], 1e-2, 20, ["cpu"])
+                            [1.0], 1e-4, 50, ["cpu"])
     gradient = estimator.gradient_step(samples)
-    print(gradient)
+    assert gradient.shape == (2,1)

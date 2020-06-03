@@ -2,6 +2,7 @@ from pytorch_optimize.model import Model, SamplingStrategy
 from torch.nn import Module, Linear
 import torch
 from dataclasses import dataclass
+import pytest
 
 
 class TestModule(Module):
