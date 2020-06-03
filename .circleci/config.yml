@@ -1,23 +1,21 @@
-version: 2
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
 jobs:
-  build:
-    docker:
-      - image: circleci/python:3.7
-
-    working_directory: ~/repo
-
+  build-and-test:
+    executor: python/default
     steps:
       - checkout
-      
+      - python/load-cache
+      - python/install-deps
+      - python/save-cache
       - run:
-          name: install dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install pytorch_optimize
-    
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            pytest -v --cov
+          command: ./manage.py test
+          name: Test
+
+workflows:
+  main:
+    jobs:
+      - build-and-test
