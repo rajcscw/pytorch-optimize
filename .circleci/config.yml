@@ -14,7 +14,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install pytorch_optimize
+            pip install pytorch_optimize/
     
       - run:
           name: run tests
