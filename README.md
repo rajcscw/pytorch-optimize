@@ -1,4 +1,5 @@
-# pytorch-optimize
+# pytorch-optimize [![CircleCI](https://circleci.com/gh/rajcscw/pytorch-optimize/tree/master.svg?style=svg)](https://circleci.com/gh/rajcscw/pytorch-optimize/tree/master)
+
 pytorch-optimize is a simple black-box framework to train pytorch models for optimizing arbitrary objective functions. It provides simple wrappers for models and optimizers so that they can be used to optimize the provided objective function (including non-differentiable objectives). It also supports optimization of multiple objectives out-of-the-box. The optimizer itself is based on
 [Evolution strategies](https://arxiv.org/pdf/1703.03864.pdf) which estimates gradient using parallel workers so that it can scale well utilizing multiple cores.
 
