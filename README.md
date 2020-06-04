@@ -56,6 +56,9 @@ Two simple usecases namely reinforcement learning and supervised learning are pr
 2.**Reinforcement Learning:** 
 Similary, the script [rl.py](https://github.com/rajcscw/pytorch-optimize/blob/master/sample_scripts/rl.py) shows how to train an RL agent that tries to maximize the episodic reward it receives while solving the task cart pole balancing task.
 
+## Contributions
+You are welcome to contribute to the repository by developing new features or fixing bugs. If you do so, please create a pull request.
+
 
 ## Cite
 
