@@ -35,7 +35,7 @@ class Net(nn.Module):
 
 
 class EpisodicReturn(Objective):
-    def __call__(self, model: Model, samples: Samples) -> List[float]:
+    def __call__(self, model: Model, samples: Samples, device: str = "cpu") -> List[float]:
         # play an episode
         env = gym.make(samples.env_name)
         env._max_episode_steps = 500
@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
     # optimizer
     es_optimizer = ESOptimizer(model=wrapped_model, sgd_optimizer=SGD(policy.parameters(), lr=1e-2),
-                               objective_fn=reward_measure, obj_weights=[1.0],sigma=1e-1, n_samples=100)
+                               objective_fn=reward_measure, obj_weights=[1.0],sigma=1e-1, n_samples=10,
+                               devices=["cpu"])
 
     # create env samples
     samples = EnvSamples(env_name="CartPole-v0")
