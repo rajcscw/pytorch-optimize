@@ -73,7 +73,7 @@ If you use this repository for your research, please cite with the following bib
 
 ```
 @misc{pytorch_optimize,
-  author = {Ramamaurthy, Rajkumar},
+  author = {Ramamurthy, Rajkumar},
   title = {pytorch-optimize - a black box optimization framework},
   year = {2020},
   publisher = {GitHub},
