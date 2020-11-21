@@ -1,7 +1,8 @@
 name: Publish package to PyPI when master is updated
-on: push
-  branches:
-  - master
+on: 
+  push
+    branches:
+    - master
 
 jobs
   build-and-publish:
