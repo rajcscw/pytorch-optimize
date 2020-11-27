@@ -72,9 +72,9 @@ You are welcome to contribute to the repository by developing new features or fi
 If you use this repository for your research, please cite with the following bibtex:
 
 ```
-@misc{pytorch_optimize,
-  author = {Ramamurthy, Rajkumar},
+@article{pytorch_optimize,
   title = {pytorch-optimize - a black box optimization framework},
+  author = {Ramamurthy, Rajkumar},
   year = {2020},
   publisher = {GitHub},
   journal = {GitHub repository},
