@@ -7,7 +7,7 @@ type: software
 authors:
   - given-names: Rajkumar
     family-names: Ramamurthy
-repository-code: 'https://github.com/rajcscw/pytorch-optimize
+repository-code: 'https://github.com/rajcscw/pytorch-optimize'
 abstract: "pytorch-optimize is a simple black-box framework to train pytorch models for optimizing arbitrary objective functions. It provides simple wrappers for models and optimizers so that they can be used to optimize the provided objective function (including non-differentiable objectives). It also supports optimization of multiple objectives out-of-the-box."
 keywords:
   - pytorch
