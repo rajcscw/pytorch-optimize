@@ -72,12 +72,11 @@ You are welcome to contribute to the repository by developing new features or fi
 If you use this repository for your research, please cite with the following bibtex:
 
 ```
-@misc{ramamurthy2020pytorch_optimize,
-  title = {pytorch-optimize - a black box optimization framework},
-  author = {Ramamurthy, Rajkumar},
-  year = {2020},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/rajcscw/pytorch-optimize}},
+@software{Ramamurthy_pytorch-optimize_is_a,
+author = {Ramamurthy, Rajkumar},
+license = {MIT},
+title = {{pytorch-optimize is a simple black-box optimisation framework}},
+url = {https://github.com/rajcscw/pytorch-optimize},
+version = {0.0.1}
 }
 ```
